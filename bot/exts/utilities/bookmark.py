@@ -37,15 +37,15 @@ class Bookmark(commands.Cog):
     # A lookup of what messages each member has bookmarked.
     # Used to stop members from bookmarking the same message twice.
     # {member id: serialised json list of message ids}
-    member_bookmarked_messages = RedisCache()
+    all_member_bookmarked_messages = RedisCache()
 
     def __init__(self, bot: Bot):
         self.bot = bot
 
     async def get_member_bookmarked_messages(self, member: discord.Member) -> list[int]:
         """De-serialise and return a list of a member's bookmarked messages."""
-        members_bookmarked_messages = await self.member_bookmarked_messages.get(member.id, "[]")
-        return json.loads(members_bookmarked_messages)
+        single_members_bookmarked_messages = await self.all_member_bookmarked_messages.get(member.id, "[]")
+        return json.loads(single_members_bookmarked_messages)
 
     async def update_member_bookmarked_messages(
         self,
@@ -54,14 +54,14 @@ class Bookmark(commands.Cog):
         add_or_remove: Literal["add", "remove"]
     ) -> None:
         """De-serialise, run specified action, serialise, and store the messages a member has bookmarked."""
-        members_bookmarked_messages = await self.get_member_bookmarked_messages(member)
-        if message_id not in members_bookmarked_messages:
+        single_members_bookmarked_messages = await self.get_member_bookmarked_messages(member)
+        if message_id not in single_members_bookmarked_messages:
             # Member deleted a DM message other than a bookmark
             return
 
         action = list.append if add_or_remove == "add" else list.remove
-        action(members_bookmarked_messages, message_id)
-        await self.member_bookmarked_messages.set(member.id, json.dumps(members_bookmarked_messages))
+        action(single_members_bookmarked_messages, message_id)
+        await self.all_member_bookmarked_messages.set(member.id, json.dumps(single_members_bookmarked_messages))
 
     @staticmethod
     def build_bookmark_dm(target_message: discord.Message, title: str) -> discord.Embed:
@@ -101,9 +101,9 @@ class Bookmark(commands.Cog):
         Raise error if they have already bookmarked.
         Return the DM message object if not.
         """
-        members_bookmarked_messages = await self.get_member_bookmarked_messages(member)
+        single_members_bookmarked_messages = await self.get_member_bookmarked_messages(member)
 
-        if target_message.id in members_bookmarked_messages:
+        if target_message.id in single_members_bookmarked_messages:
             raise AlreadyBookmarkedError
 
         embed = self.build_bookmark_dm(target_message, title)
