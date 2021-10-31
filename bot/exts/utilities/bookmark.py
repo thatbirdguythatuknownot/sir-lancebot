@@ -34,7 +34,7 @@ class AlreadyBookmarkedError(commands.UserInputError):
 class Bookmark(commands.Cog):
     """Creates personal bookmarks by relaying a message link to the user's DMs."""
 
-    # A lookup of what messages a member has bookmarked.
+    # A lookup of what messages each member has bookmarked.
     # Used to stop members from bookmarking the same message twice.
     # {member id: serialised json list of message ids}
     member_bookmarked_messages = RedisCache()
