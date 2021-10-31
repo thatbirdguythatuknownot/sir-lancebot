@@ -36,14 +36,14 @@ class Bookmark(commands.Cog):
 
     # A lookup of what messages a member has bookmarked.
     # Used to stop members from bookmarking the same message twice.
-    # {member id: json dumps list of message ids}
+    # {member id: serialised json list of message ids}
     member_bookmarked_messages = RedisCache()
 
     def __init__(self, bot: Bot):
         self.bot = bot
 
     async def get_member_bookmarked_messages(self, member: discord.Member) -> list[int]:
-        """De-serialise and return the messages a user has bookmarked."""
+        """De-serialise and return a list of a member's bookmarked messages."""
         members_bookmarked_messages = await self.member_bookmarked_messages.get(member.id, "[]")
         return json.loads(members_bookmarked_messages)
 
@@ -53,7 +53,7 @@ class Bookmark(commands.Cog):
         message_id: int,
         add_or_remove: Literal["add", "remove"]
     ) -> None:
-        """De-serialise, run specified action, serialise, and store the messages a user has bookmarked."""
+        """De-serialise, run specified action, serialise, and store the messages a member has bookmarked."""
         members_bookmarked_messages = await self.get_member_bookmarked_messages(member)
         if message_id not in members_bookmarked_messages:
             # Member deleted a DM message other than a bookmark
@@ -82,7 +82,7 @@ class Bookmark(commands.Cog):
 
     @staticmethod
     def build_error_embed(message: str) -> discord.Embed:
-        """Builds an error embed for when a bookmark requester has DMs disabled."""
+        """Builds an error embed for a given message."""
         return discord.Embed(
             title=random.choice(ERROR_REPLIES),
             description=message,
@@ -95,7 +95,12 @@ class Bookmark(commands.Cog):
         title: str,
         member: discord.Member
     ) -> discord.Message:
-        """Send and return the message a the user with the given embed, raise error if they have already bookmarked."""
+        """
+        Send the bookmark to the member with the given embed.
+
+        Raise error if they have already bookmarked.
+        Return the DM message object if not.
+        """
         members_bookmarked_messages = await self.get_member_bookmarked_messages(member)
 
         if target_message.id in members_bookmarked_messages:
@@ -115,7 +120,7 @@ class Bookmark(commands.Cog):
         target_message: discord.Message,
         title: str
     ) -> None:
-        """Sends the bookmark DM, or sends an error embed when a user bookmarks a message."""
+        """Sends the bookmark DM, or sends an error embed when a member bookmarks a message."""
         try:
             await self.maybe_send_bookmark(target_message, title, member)
         except discord.Forbidden:
@@ -138,9 +143,9 @@ class Bookmark(commands.Cog):
         title: str = "Bookmark"
     ) -> None:
         """
-        Send the author a link to the specified bookmark via DMs.
+        Send the author a link to the specified message via DMs.
 
-        Users can either give a message as an argument, or reply to a message.
+        Members can either give a message as an argument, or reply to a message.
 
         Bookmarks can subsequently be deleted by using the `bookmark delete` command.
         """
@@ -207,9 +212,9 @@ class Bookmark(commands.Cog):
         message_to_delete: Optional[WrappedMessageConverter]
     ) -> None:
         """
-        Delete the referenced DM message by the user.
+        Delete the referenced DM message by the member.
 
-        Users can either give a message as an argument, or reply to a message.
+        Members can either give a message as an argument, or reply to a message.
         """
         message_to_delete = message_to_delete or getattr(ctx.message.reference, "resolved", None)
         if not message_to_delete:
