@@ -9,10 +9,12 @@ import discord
 from discord.ext import commands
 
 from bot.bot import Bot
-from bot.constants import AdventOfCode as AocConfig, Channels, Colours, Emojis, Month, Roles, WHITELISTED_CHANNELS
+from bot.constants import (
+    AdventOfCode as AocConfig, Channels, Colours, Emojis, Month, Roles, STAFF_ROLES, WHITELISTED_CHANNELS
+)
 from bot.exts.events.advent_of_code import _helpers
 from bot.exts.events.advent_of_code.views.dayandstarview import AoCDropdownView
-from bot.utils.decorators import InChannelCheckFailure, in_month, whitelist_override, with_role
+from bot.utils.decorators import InChannelCheckFailure, in_month, redirect_output, whitelist_override, with_role
 from bot.utils.extensions import invoke_help_command
 
 log = logging.getLogger(__name__)
@@ -50,6 +52,7 @@ class AdventOfCode(commands.Cog):
 
     @commands.group(name="adventofcode", aliases=("aoc",))
     @whitelist_override(channels=AOC_WHITELIST)
+    @redirect_output(destination_channel=Channels.advent_of_code_commands, bypass_roles=STAFF_ROLES)
     async def adventofcode_group(self, ctx: commands.Context) -> None:
         """All of the Advent of Code commands."""
         if not ctx.invoked_subcommand:
@@ -61,6 +64,7 @@ class AdventOfCode(commands.Cog):
         brief="Notifications for new days"
     )
     @whitelist_override(channels=AOC_WHITELIST)
+    @redirect_output(destination_channel=Channels.advent_of_code_commands, bypass_roles=STAFF_ROLES)
     async def aoc_subscribe(self, ctx: commands.Context) -> None:
         """Assign the role for notifications about new days being ready."""
         current_year = datetime.now().year
@@ -86,6 +90,7 @@ class AdventOfCode(commands.Cog):
     @in_month(Month.DECEMBER)
     @adventofcode_group.command(name="unsubscribe", aliases=("unsub",), brief="Notifications for new days")
     @whitelist_override(channels=AOC_WHITELIST)
+    @redirect_output(destination_channel=Channels.advent_of_code_commands, bypass_roles=STAFF_ROLES)
     async def aoc_unsubscribe(self, ctx: commands.Context) -> None:
         """Remove the role for notifications about new days being ready."""
         role = ctx.guild.get_role(AocConfig.role_id)
@@ -98,6 +103,7 @@ class AdventOfCode(commands.Cog):
 
     @adventofcode_group.command(name="countdown", aliases=("count", "c"), brief="Return time left until next day")
     @whitelist_override(channels=AOC_WHITELIST)
+    @redirect_output(destination_channel=Channels.advent_of_code_commands, bypass_roles=STAFF_ROLES)
     async def aoc_countdown(self, ctx: commands.Context) -> None:
         """Return time left until next day."""
         if _helpers.is_in_advent():
@@ -123,12 +129,14 @@ class AdventOfCode(commands.Cog):
 
     @adventofcode_group.command(name="about", aliases=("ab", "info"), brief="Learn about Advent of Code")
     @whitelist_override(channels=AOC_WHITELIST)
+    @redirect_output(destination_channel=Channels.advent_of_code_commands, bypass_roles=STAFF_ROLES)
     async def about_aoc(self, ctx: commands.Context) -> None:
         """Respond with an explanation of all things Advent of Code."""
         await ctx.send(embed=self.cached_about_aoc)
 
     @adventofcode_group.command(name="join", aliases=("j",), brief="Learn how to join the leaderboard (via DM)")
     @whitelist_override(channels=AOC_WHITELIST)
+    @redirect_output(destination_channel=Channels.advent_of_code_commands, bypass_roles=STAFF_ROLES)
     async def join_leaderboard(self, ctx: commands.Context) -> None:
         """DM the user the information for joining the Python Discord leaderboard."""
         current_year = datetime.now().year
